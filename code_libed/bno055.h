@@ -18,7 +18,7 @@ struct BNOAngles {
 
 class BNO055 {
 public:
-  BNO055(uint8_t addr = 0x28) : address(addr) {}
+  BNO055(uint8_t addr) : address(addr) {}
 
   bool begin() {
     Wire.begin();
