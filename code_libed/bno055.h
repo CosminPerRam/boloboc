@@ -3,12 +3,12 @@
 
 #include <Wire.h>
 
-#define REG_OPR_MODE 0x3D
+#define REG_OPR_MODE    0x3D
 #define REG_SYS_TRIGGER 0x3F
 #define REG_EULER_H_LSB 0x1A
 
-#define MODE_CONFIG 0x00
-#define MODE_NDOF 0x0C
+#define MODE_CONFIG     0x00
+#define MODE_NDOF       0x0C
 
 struct BNOAngles {
   float x;
