@@ -3,6 +3,7 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 #include "LedControl.h"
+#include <math.h>
 
 #define LOOP_DELAY 250
 #define AXIS_CHANGE_DELAY 3000
@@ -19,6 +20,7 @@ Adafruit_BNO055 bno = Adafruit_BNO055();
 sensors_event_t g_bnoEvent;
 
 LedControl lc = LedControl(LED_DATA, LED_CLK, LED_CS);
+bool g_matrix[8][8] = { 0 };
 
 enum Axis {
   X = 0,
@@ -29,6 +31,7 @@ enum Axis {
 Axis g_axis = X;
 int g_snap = 0;
 int g_point = 0;
+int g_diff = 0;
 bool g_displayNumerical = true;
 
 bool g_btnSnapPressed = false;
@@ -40,7 +43,11 @@ void setLed(int x, int y, bool state) {
 }
 
 void clearLeds() {
-  lc.clearDisplay(0);
+  for(int x = 0; x < 8; x++) {
+    for(int y = 0; y < 8; y++) {
+      setLed(x, y, false);
+    }
+  }
 }
 
 void checkTakeSnap() {
@@ -108,6 +115,7 @@ void checkCycleAxis() {
 
   g_snap = 0;
   g_point = 0;
+  g_diff = 0;
   switch (g_axis) {
     case X:
       g_axis = Y;
@@ -144,6 +152,7 @@ void collectData() {
       g_point = g_bnoEvent.orientation.z;
       break;
   }
+  g_diff = g_snap - g_point;
 
   g_btnAxisPressed = digitalRead(BTN_AXIS);
   g_btnSnapPressed = digitalRead(BTN_SNAP);
@@ -175,6 +184,8 @@ void serialPrintVars() {
   Serial.print(g_displayNumerical);
   Serial.print("\tPoint: ");
   Serial.print(g_point);
+  Serial.print("\tDiff: ");
+  Serial.print(g_diff);
   Serial.println("");
 
   Serial.println("");
@@ -184,10 +195,54 @@ void loopDelay() {
   delay(LOOP_DELAY);
 }
 
+void computeMatrix() {
+    // Normalize the wedge endpoints into [0, 360)
+    float start = g_diff - 90.0f;
+    float end   = g_diff + 90.0f;
+
+    // Bring start, end into [0, 360)
+    while (start < 0.0f)    start += 360.0f;
+    while (start >= 360.0f) start -= 360.0f;
+    while (end < 0.0f)      end   += 360.0f;
+    while (end >= 360.0f)   end   -= 360.0f;
+
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+            // Map (i,j) into centered coordinates (x,y) ∈ [−3.5, +3.5]
+            float x = (float)j - 3.5f;
+            float y = 3.5f - (float)i;
+            // Compute angle in degrees, then normalize to [0, 360)
+            float theta = atan2f(y, x) * (180.0f / PI);
+            if (theta < 0.0f) {
+                theta += 360.0f;
+            }
+            // Check if theta lies within [start, end] on a wrapped circle
+            uint8_t on = 0;
+            if (start <= end) {
+                // Simple interval
+                if (theta >= start && theta <= end) {
+                    on = 1;
+                }
+            } else {
+                // Wrapped around 360
+                if (theta >= start || theta <= end) {
+                    on = 1;
+                }
+            }
+            g_matrix[i][j] = on;
+        }
+    }
+}
+
 void updateDisplay() {
-  lc.setLed(0, 0, 0, 1);
-  lc.setLed(0, 3, 3, 1);
-  lc.setLed(0, 7, 7, 1);
+  computeMatrix();
+  clearLeds();
+
+  for(int x = 0; x < 8; x++) {
+    for(int y = 0; y < 8; y++) {
+      setLed(x, y, g_matrix[x][y]);
+    }
+  }
 }
 
 void setup(void) 
