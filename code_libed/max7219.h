@@ -19,7 +19,7 @@ class MAX7219 {
     int clk;
     int cs;
 
-    byte status[8];
+    byte status[8] = { 0 };
 
     void spiTransfer(volatile byte opcode, volatile byte data) {
       digitalWrite(cs, LOW);
@@ -48,8 +48,7 @@ class MAX7219 {
 
       // clear buffer
       for (int i = 0; i < 8; i++) {
-        status[i] = 0x00;
-        spiTransfer(OP_DIGIT0 + i, status[i]);
+        spiTransfer(OP_DIGIT0 + i, 0x00);
       }
     }
 
