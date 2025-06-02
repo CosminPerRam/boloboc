@@ -7,6 +7,9 @@
 #define NUMERIC_CHANGE_DELAY 250
 #define AXIS_CHANGE_DELAY 3000
 #define SNAP_CHANGE_DELAY 3000
+#define SETUP_DELAY 1000
+
+#define SERIAL_BAUDRATE 9600
 
 #define BTN_SNAP 3
 #define BTN_AXIS 2
@@ -299,7 +302,7 @@ void setup(void)
   pinMode(BTN_AXIS, INPUT_PULLDOWN);
   pinMode(BTN_TYPE, INPUT_PULLDOWN);
 
-  Serial.begin(9600);
+  Serial.begin(SERIAL_BAUDRATE);
   
   if(!bno.begin())
   {
@@ -307,7 +310,7 @@ void setup(void)
     while(1);
   }
   
-  delay(1000);
+  delay(SETUP_DELAY);
 }
 
 void loop(void) 
