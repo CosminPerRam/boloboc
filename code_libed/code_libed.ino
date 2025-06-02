@@ -5,6 +5,8 @@
 #include "LedControl.h"
 
 #define LOOP_DELAY 250
+#define AXIS_CHANGE_DELAY 3000
+
 #define BTN_SNAP 3
 #define BTN_AXIS 2
 #define BTN_TYPE 0
@@ -32,12 +34,58 @@ bool g_btnSnapPressed = false;
 bool g_btnAxisPressed = false;
 bool g_btnTypePressed = false;
 
+void setLed(int x, int y, bool state) {
+  lc.setLed(0, x, y, state);
+}
+
+void clearLeds() {
+  lc.clearDisplay(0);
+}
+
 void checkTakeSnap() {
   if (!g_btnSnapPressed) {
     return;
   }
 
   g_snap = g_point;
+}
+
+void printAxisChange() {
+  bool letter[3][3] = { false };
+  switch (g_axis) {
+    case X:
+      letter[0][0] = true;
+      letter[0][2] = true;
+      letter[1][1] = true;
+      letter[2][0] = true;
+      letter[2][2] = true;
+      break;
+    case Y:
+      letter[0][0] = true;
+      letter[0][2] = true;
+      letter[1][1] = true;
+      letter[2][1] = true;
+      break;
+    case Z:
+      letter[0][0] = true;
+      letter[0][1] = true;
+      letter[0][2] = true;
+      letter[1][1] = true;
+      letter[2][0] = true;
+      letter[2][1] = true;
+      letter[2][2] = true;
+      break;
+  }
+
+  clearLeds();
+  for (int x = 0; x < 3; x++) {
+    for (int y = 0; y < 3; y++) {
+      setLed(x, y, letter[x][y]);
+    }
+  }
+
+  delay(AXIS_CHANGE_DELAY);
+  clearLeds();
 }
 
 void checkCycleAxis() {
@@ -58,6 +106,8 @@ void checkCycleAxis() {
       g_axis = X;
       break;
   }
+
+  printAxisChange();
 }
 
 void checkToggleNumericalDisplay() {
