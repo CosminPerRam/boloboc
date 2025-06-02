@@ -2,9 +2,9 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
-#include "LedControl.h"
 #include <math.h>
 #include "digits.h"
+#include "max7219.h"
 
 #define LOOP_DELAY 10
 #define NUMERIC_CHANGE_DELAY 250
@@ -14,14 +14,14 @@
 #define BTN_SNAP 3
 #define BTN_AXIS 2
 #define BTN_TYPE 0
-#define LED_DATA 10
+#define LED_MOSI 10
 #define LED_CLK 8
 #define LED_CS 9
   
 Adafruit_BNO055 bno = Adafruit_BNO055();
 sensors_event_t g_bnoEvent;
 
-LedControl lc = LedControl(LED_DATA, LED_CLK, LED_CS);
+MAX7219 lc = MAX7219(LED_MOSI, LED_CLK, LED_CS);
 bool g_matrix[8][8] = { 0 };
 
 enum Axis {
@@ -43,7 +43,7 @@ bool g_btnTypePressed = false;
 int t_x, t_y;
 
 void setLed(int x, int y, bool state) {
-  lc.setLed(0, x, y, state);
+  lc.setLed(x, y, state);
 }
 
 void resetLeds() {
@@ -246,7 +246,7 @@ void computeRotatedMatrix() {
 
 static void drawDigit3x5(uint8_t digit, int topRow, int leftCol) {
   if (digit > 9) return;
-  
+
   for (int dr = 0; dr < 5; dr++) {
     uint8_t rowBits = DIGIT_FONT[digit][dr];
     for (int dc = 0; dc < 3; dc++) {
@@ -314,9 +314,9 @@ void setup(void)
 
   bno.setExtCrystalUse(true);
 
-  lc.shutdown(0,false);
-  lc.setIntensity(0,1);
-  lc.clearDisplay(0);
+  //lc.shutdown(0,false);
+  //lc.setIntensity(0,1);
+  //lc.clearDisplay(0);
 }
 
 void loop(void) 
