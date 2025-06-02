@@ -210,43 +210,43 @@ void loopDelay() {
 }
 
 void computeRotatedMatrix() {
-    float start = g_diff - 90.0f;
-    float end   = g_diff + 90.0f;
+  float start = g_diff - 90.0f;
+  float end   = g_diff + 90.0f;
 
-    while (start < 0.0f)    start += 360.0f;
-    while (start >= 360.0f) start -= 360.0f;
-    while (end < 0.0f)      end   += 360.0f;
-    while (end >= 360.0f)   end   -= 360.0f;
+  while (start < 0.0f)    start += 360.0f;
+  while (start >= 360.0f) start -= 360.0f;
+  while (end < 0.0f)      end   += 360.0f;
+  while (end >= 360.0f)   end   -= 360.0f;
 
-    int i, j;
-    for (i = 0; i < 8; i++) {
-        for (j = 0; j < 8; j++) {
+  int i, j;
+  for (i = 0; i < 8; i++) {
+    for (j = 0; j < 8; j++) {
+      float x = (float)j - 3.5f;
+      float y = 3.5f - (float)i;
 
-            float x = (float)j - 3.5f;
-            float y = 3.5f - (float)i;
+      float theta = atan2f(y, x) * (180.0f / PI);
+      if (theta < 0.0f) {
+        theta += 360.0f;
+      }
 
-            float theta = atan2f(y, x) * (180.0f / PI);
-            if (theta < 0.0f) {
-                theta += 360.0f;
-            }
-
-            uint8_t on = 0;
-            if (start <= end) {
-                if (theta >= start && theta <= end) {
-                    on = 1;
-                }
-            } else {
-                if (theta >= start || theta <= end) {
-                    on = 1;
-                }
-            }
-            g_matrix[i][j] = on;
+      bool on = false;
+      if (start <= end) {
+        if (theta >= start && theta <= end) {
+          on = true;
         }
+      } else {
+        if (theta >= start || theta <= end) {
+          on = true;
+        }
+      }
+      g_matrix[i][j] = on;
     }
+  }
 }
 
 static void drawDigit3x5(uint8_t digit, int topRow, int leftCol) {
   if (digit > 9) return;
+  
   for (int dr = 0; dr < 5; dr++) {
     uint8_t rowBits = DIGIT_FONT[digit][dr];
     for (int dc = 0; dc < 3; dc++) {
@@ -286,7 +286,7 @@ void computeNumericMatrix() {
 
 void updateDisplay() {
   resetLeds();
-  
+
   if (g_displayNumerical) {
     computeNumericMatrix();
   } else {
