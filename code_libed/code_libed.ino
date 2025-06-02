@@ -6,6 +6,7 @@
 
 #define LOOP_DELAY 250
 #define AXIS_CHANGE_DELAY 3000
+#define SNAP_CHANGE_DELAY 3000
 
 #define BTN_SNAP 3
 #define BTN_AXIS 2
@@ -48,6 +49,18 @@ void checkTakeSnap() {
   }
 
   g_snap = g_point;
+
+  clearLeds();
+  setLed(0, 0, true);
+  setLed(7, 0, true);
+  setLed(3, 3, true);
+  setLed(4, 4, true);
+  setLed(3, 4, true);
+  setLed(4, 3, true);
+  setLed(0, 7, true);
+  setLed(7, 7, true);
+  delay(SNAP_CHANGE_DELAY);
+  clearLeds();
 }
 
 void printAxisChange() {
