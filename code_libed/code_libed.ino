@@ -17,6 +17,12 @@
 #define LED_MOSI 10
 #define LED_CLK 8
 #define LED_CS 9
+
+#define LED_BRIGHTNESS 1 // 1 - 15
+
+#define NUMERIC_ROW_START 1
+#define NUMERIC_COL_TENS_START 0
+#define NUMERIC_COL_ONES_START 5
   
 BNO055 bno = BNO055();
 BNOAngles g_bnoAngles;
@@ -244,14 +250,14 @@ void computeRotatedMatrix() {
   }
 }
 
-static void drawDigit3x5(uint8_t digit, int topRow, int leftCol) {
+static void drawDigit3x5(uint8_t digit, int leftCol) {
   if (digit > 9) return;
 
   for (int dr = 0; dr < 5; dr++) {
     uint8_t rowBits = DIGIT_FONT[digit][dr];
     for (int dc = 0; dc < 3; dc++) {
       bool pixelOn = (rowBits >> (2 - dc)) & 0x01;
-      int r = topRow + dr;
+      int r = NUMERIC_ROW_START + dr;
       int c = leftCol + dc;
       if (r >= 0 && r < 8 && c >= 0 && c < 8) {
         g_matrix[r][c] = pixelOn ? 1 : 0;
@@ -260,28 +266,19 @@ static void drawDigit3x5(uint8_t digit, int topRow, int leftCol) {
   }
 }
 
-bool writeTwoDigitNumber(uint16_t number) {
-  if (number > 99) return false;
-
-  uint8_t tens  = number / 10;
-  uint8_t ones  = number % 10;
-
-  const int topRow = 1;
-  const int leftColTens = 0;
-  const int leftColOnes = 5;
-
-  drawDigit3x5(tens, topRow, leftColTens);
-  drawDigit3x5(ones, topRow, leftColOnes);
-
-  return true;
-}
-
 void computeNumericMatrix() {
-  bool written = writeTwoDigitNumber(abs(g_diff));
-  if (!written) {
+  uint16_t number = abs(g_diff);
+  if (number > 99) {
     resetLeds();
     renderLeds();
+    return;
   }
+
+  uint8_t tens = number / 10;
+  uint8_t ones = number % 10;
+
+  drawDigit3x5(tens, NUMERIC_COL_TENS_START);
+  drawDigit3x5(ones, NUMERIC_COL_ONES_START);
 }
 
 void updateDisplay() {
@@ -309,6 +306,8 @@ void setup(void)
     Serial.print("BNO055 failure.");
     while(1);
   }
+
+  lc.setBrightness(LED_BRIGHTNESS);
   
   delay(SETUP_DELAY);
 }
