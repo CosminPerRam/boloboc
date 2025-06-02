@@ -1,4 +1,3 @@
-#include <math.h>
 #include "digits.h"
 #include "max7219.h"
 #include "bno055.h"
