@@ -6,7 +6,7 @@
 #include <math.h>
 #include "digits.h"
 
-#define LOOP_DELAY 0
+#define LOOP_DELAY 10
 #define NUMERIC_CHANGE_DELAY 250
 #define AXIS_CHANGE_DELAY 3000
 #define SNAP_CHANGE_DELAY 3000
@@ -46,18 +46,18 @@ void setLed(int x, int y, bool state) {
   lc.setLed(0, x, y, state);
 }
 
-void clearLeds() {
-  for(t_x = 0; t_x < 8; t_x++) {
-    for(t_y = 0; t_y < 8; t_y++) {
-      setLed(t_x, t_y, false);
-    }
-  }
-}
-
 void resetLeds() {
   for(t_x = 0; t_x < 8; t_x++) {
     for(t_y = 0; t_y < 8; t_y++) {
       g_matrix[t_x][t_y] = false;
+    }
+  }
+}
+
+void renderLeds() {
+  for(t_x = 0; t_x < 8; t_x++) {
+    for(t_y = 0; t_y < 8; t_y++) {
+      setLed(t_x, t_y, g_matrix[t_x][t_y]);
     }
   }
 }
@@ -69,17 +69,18 @@ void checkTakeSnap() {
 
   g_snap = g_point;
 
-  clearLeds();
-  setLed(0, 0, true);
-  setLed(7, 0, true);
-  setLed(3, 3, true);
-  setLed(4, 4, true);
-  setLed(3, 4, true);
-  setLed(4, 3, true);
-  setLed(0, 7, true);
-  setLed(7, 7, true);
+  resetLeds();
+  g_matrix[0][0] = true;
+  g_matrix[7][0] = true;
+  g_matrix[3][3] = true;
+  g_matrix[4][4] = true;
+  g_matrix[3][4] = true;
+  g_matrix[4][3] = true;
+  g_matrix[0][7] = true;
+  g_matrix[7][7] = true;
+  renderLeds();
+
   delay(SNAP_CHANGE_DELAY);
-  clearLeds();
 }
 
 void printAxisChange() {
@@ -109,15 +110,15 @@ void printAxisChange() {
       break;
   }
 
-  clearLeds();
+  resetLeds();
   for (t_x = 0; t_x < 3; t_x++) {
     for (t_y = 0; t_y < 3; t_y++) {
-      setLed(t_x, t_y, letter[t_x][t_y]);
+      g_matrix[t_x][t_y] = letter[t_x][t_y];
     }
   }
+  renderLeds();
 
   delay(AXIS_CHANGE_DELAY);
-  clearLeds();
 }
 
 void checkCycleAxis() {
@@ -278,23 +279,21 @@ bool writeTwoDigitNumber(uint16_t number) {
 void computeNumericMatrix() {
   bool written = writeTwoDigitNumber(abs(g_diff));
   if (!written) {
-    clearLeds();
+    resetLeds();
+    renderLeds();
   }
 }
 
 void updateDisplay() {
   resetLeds();
+  
   if (g_displayNumerical) {
     computeNumericMatrix();
   } else {
     computeRotatedMatrix();
   }
 
-  for(t_x = 0; t_x < 8; t_x++) {
-    for(t_y = 0; t_y < 8; t_y++) {
-      setLed(t_x, t_y, g_matrix[t_x][t_y]);
-    }
-  }
+  renderLeds();
 }
 
 void setup(void) 
