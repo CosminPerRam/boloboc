@@ -5,7 +5,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-#define OP_NOOP        0x00
 #define OP_DIGIT0      0x01
 #define OP_DECODEMODE  0x09
 #define OP_INTENSITY   0x0A
