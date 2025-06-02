@@ -1,10 +1,7 @@
-#include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BNO055.h>
-#include <utility/imumaths.h>
 #include <math.h>
 #include "digits.h"
 #include "max7219.h"
+#include "bno055.h"
 
 #define LOOP_DELAY 10
 #define NUMERIC_CHANGE_DELAY 250
@@ -18,8 +15,8 @@
 #define LED_CLK 8
 #define LED_CS 9
   
-Adafruit_BNO055 bno = Adafruit_BNO055();
-sensors_event_t g_bnoEvent;
+BNO055 bno = BNO055();
+BNOAngles g_bnoAngles;
 
 MAX7219 lc = MAX7219(LED_MOSI, LED_CLK, LED_CS);
 bool g_matrix[8][8] = { 0 };
@@ -154,16 +151,16 @@ void checkToggleNumericalDisplay() {
 }
 
 void collectData() {
-  bno.getEvent(&g_bnoEvent);
+  bno.getOrientation(g_bnoAngles);
   switch (g_axis) {
     case X:
-      g_point = g_bnoEvent.orientation.x;
+      g_point = g_bnoAngles.x;
       break;
     case Y:
-      g_point = g_bnoEvent.orientation.y;
+      g_point = g_bnoAngles.y;
       break;
     case Z:
-      g_point = g_bnoEvent.orientation.z;
+      g_point = g_bnoAngles.z;
       break;
   }
   g_diff = g_snap - g_point;
@@ -175,11 +172,11 @@ void collectData() {
 
 void serialPrintVars() {
   Serial.print("BNO: X: ");
-  Serial.print(g_bnoEvent.orientation.x, 0);
+  Serial.print(g_bnoAngles.x, 0);
   Serial.print("\tY: ");
-  Serial.print(g_bnoEvent.orientation.y, 0);
+  Serial.print(g_bnoAngles.y, 0);
   Serial.print("\tZ: ");
-  Serial.print(g_bnoEvent.orientation.z, 0);
+  Serial.print(g_bnoAngles.z, 0);
   Serial.println("");
 
   Serial.print(" IO: AXIS: ");
@@ -311,12 +308,6 @@ void setup(void)
   }
   
   delay(1000);
-
-  bno.setExtCrystalUse(true);
-
-  //lc.shutdown(0,false);
-  //lc.setIntensity(0,1);
-  //lc.clearDisplay(0);
 }
 
 void loop(void) 
