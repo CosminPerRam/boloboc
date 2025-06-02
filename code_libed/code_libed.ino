@@ -4,8 +4,10 @@
 #include <utility/imumaths.h>
 #include "LedControl.h"
 #include <math.h>
+#include "digits.h"
 
-#define LOOP_DELAY 250
+#define LOOP_DELAY 0
+#define NUMERIC_CHANGE_DELAY 250
 #define AXIS_CHANGE_DELAY 3000
 #define SNAP_CHANGE_DELAY 3000
 
@@ -38,14 +40,24 @@ bool g_btnSnapPressed = false;
 bool g_btnAxisPressed = false;
 bool g_btnTypePressed = false;
 
+int t_x, t_y;
+
 void setLed(int x, int y, bool state) {
   lc.setLed(0, x, y, state);
 }
 
 void clearLeds() {
-  for(int x = 0; x < 8; x++) {
-    for(int y = 0; y < 8; y++) {
-      setLed(x, y, false);
+  for(t_x = 0; t_x < 8; t_x++) {
+    for(t_y = 0; t_y < 8; t_y++) {
+      setLed(t_x, t_y, false);
+    }
+  }
+}
+
+void resetLeds() {
+  for(t_x = 0; t_x < 8; t_x++) {
+    for(t_y = 0; t_y < 8; t_y++) {
+      g_matrix[t_x][t_y] = false;
     }
   }
 }
@@ -98,9 +110,9 @@ void printAxisChange() {
   }
 
   clearLeds();
-  for (int x = 0; x < 3; x++) {
-    for (int y = 0; y < 3; y++) {
-      setLed(x, y, letter[x][y]);
+  for (t_x = 0; t_x < 3; t_x++) {
+    for (t_y = 0; t_y < 3; t_y++) {
+      setLed(t_x, t_y, letter[t_x][t_y]);
     }
   }
 
@@ -137,6 +149,7 @@ void checkToggleNumericalDisplay() {
   }
 
   g_displayNumerical = !g_displayNumerical;
+  delay(NUMERIC_CHANGE_DELAY);
 }
 
 void collectData() {
@@ -195,36 +208,33 @@ void loopDelay() {
   delay(LOOP_DELAY);
 }
 
-void computeMatrix() {
-    // Normalize the wedge endpoints into [0, 360)
+void computeRotatedMatrix() {
     float start = g_diff - 90.0f;
     float end   = g_diff + 90.0f;
 
-    // Bring start, end into [0, 360)
     while (start < 0.0f)    start += 360.0f;
     while (start >= 360.0f) start -= 360.0f;
     while (end < 0.0f)      end   += 360.0f;
     while (end >= 360.0f)   end   -= 360.0f;
 
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            // Map (i,j) into centered coordinates (x,y) ∈ [−3.5, +3.5]
+    int i, j;
+    for (i = 0; i < 8; i++) {
+        for (j = 0; j < 8; j++) {
+
             float x = (float)j - 3.5f;
             float y = 3.5f - (float)i;
-            // Compute angle in degrees, then normalize to [0, 360)
+
             float theta = atan2f(y, x) * (180.0f / PI);
             if (theta < 0.0f) {
                 theta += 360.0f;
             }
-            // Check if theta lies within [start, end] on a wrapped circle
+
             uint8_t on = 0;
             if (start <= end) {
-                // Simple interval
                 if (theta >= start && theta <= end) {
                     on = 1;
                 }
             } else {
-                // Wrapped around 360
                 if (theta >= start || theta <= end) {
                     on = 1;
                 }
@@ -234,13 +244,55 @@ void computeMatrix() {
     }
 }
 
-void updateDisplay() {
-  computeMatrix();
-  clearLeds();
+static void drawDigit3x5(uint8_t digit, int topRow, int leftCol) {
+  if (digit > 9) return;
+  for (int dr = 0; dr < 5; dr++) {
+    uint8_t rowBits = DIGIT_FONT[digit][dr];
+    for (int dc = 0; dc < 3; dc++) {
+      bool pixelOn = (rowBits >> (2 - dc)) & 0x01;
+      int r = topRow + dr;
+      int c = leftCol + dc;
+      if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+        g_matrix[r][c] = pixelOn ? 1 : 0;
+      }
+    }
+  }
+}
 
-  for(int x = 0; x < 8; x++) {
-    for(int y = 0; y < 8; y++) {
-      setLed(x, y, g_matrix[x][y]);
+bool writeTwoDigitNumber(uint16_t number) {
+  if (number > 99) return false;
+
+  uint8_t tens  = number / 10;
+  uint8_t ones  = number % 10;
+
+  const int topRow = 1;
+  const int leftColTens = 0;
+  const int leftColOnes = 5;
+
+  drawDigit3x5(tens, topRow, leftColTens);
+  drawDigit3x5(ones, topRow, leftColOnes);
+
+  return true;
+}
+
+void computeNumericMatrix() {
+  bool written = writeTwoDigitNumber(abs(g_diff));
+  if (!written) {
+    clearLeds();
+  }
+}
+
+void updateDisplay() {
+  resetLeds();
+  if (g_displayNumerical) {
+    computeNumericMatrix();
+  } else {
+    computeRotatedMatrix();
+  }
+
+  for(t_x = 0; t_x < 8; t_x++) {
+    for(t_y = 0; t_y < 8; t_y++) {
+      setLed(t_x, t_y, g_matrix[t_x][t_y]);
     }
   }
 }
