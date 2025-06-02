@@ -44,7 +44,7 @@ class MAX7219 {
       spiTransfer(OP_DECODEMODE, 0); // no decode all digits
       spiTransfer(OP_SHUTDOWN, 1); // normal operation
 
-      spiTransfer(OP_INTENSITY, 1); // brightness 1->15
+      this->setBrightness(1);
 
       // clear buffer
       for (int i = 0; i < 8; i++) {
@@ -54,7 +54,7 @@ class MAX7219 {
     }
 
     void setLed(int row, int col, bool state) {
-      if (row < 0 || row > 7 || col < 0 || col > 7) return; // bounds check
+      if (row < 0 || row > 7 || col < 0 || col > 7) return;
 
       byte mask = (0x80 >> col); 
       if (state) {
@@ -62,8 +62,12 @@ class MAX7219 {
       } else {
         status[row] &= ~mask;
       }
-      // Write the updated byte back into that row’s register:
+
       spiTransfer(OP_DIGIT0 + row, status[row]);
+    }
+
+    void setBrightness(int level) { // brightness 1->15
+      spiTransfer(OP_INTENSITY, level);
     }
 };
 
